@@ -27,3 +27,13 @@ Stock & Crypto Price Analysis and Prediction Pipeline
 - Features: log_return, sma_50, sma_200, vol_30, rsi_14, rolling_max, drawdown
 - All rolling features lagged by 1 — zero leakage confirmed
 - Leakage check: PASSED — 1,958 rows verified
+
+### Stage 3 — Modeling & Forecasting
+**Date:** 2026-06-06 | **Commit:** 9c0e939 | **Status:** ✅ Complete
+
+- Model: ARIMA (auto-selected) on log returns, ETS fallback
+- Train: 1,446 rows | Test: 362 rows | RMSE: 0.022626
+- 30-day forecast: flat point estimate (white noise), expanding CI cone
+- Data hash: 987a1a9a896623cb177c6ae4377d881f
+- Artifacts: `models/arima_BTCUSD_20260606031326.rds` + `.json`
+- `model_registry` table initialized in DuckDB
