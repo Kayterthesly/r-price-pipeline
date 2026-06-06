@@ -37,3 +37,11 @@ Stock & Crypto Price Analysis and Prediction Pipeline
 - Data hash: 987a1a9a896623cb177c6ae4377d881f
 - Artifacts: `models/arima_BTCUSD_20260606031326.rds` + `.json`
 - `model_registry` table initialized in DuckDB
+
+### Stage 4 — REST API (Plumber)
+**Date:** 2026-06-06 | **Commit:** b570b1c | **Status:** ✅ Complete
+
+- `GET /health` — liveness check, returns env_mode and r_version
+- `POST /predict/price` — full ARIMA forecast pipeline over HTTP
+- trace_id propagation verified end-to-end (httr ↔ background job logs)
+- Input validation + tryCatch error handling on all endpoints
