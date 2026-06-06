@@ -302,10 +302,10 @@ server <- function(input, output, session) {
     result$forecast_df |>
       head(10) |>
       dplyr::mutate(
-        price_hat   = round(price_hat, 2),
-        price_lower = round(price_lower, 2),
-        price_upper = round(price_upper, 2),
-        log_return_hat = round(log_return_hat, 6)
+        forecast_date  = format(forecast_date, "%Y-%m-%d"),
+        price_hat      = round(price_hat, 2),
+        price_lower    = round(price_lower, 2),
+        price_upper    = round(price_upper, 2)
       ) |>
       dplyr::select(forecast_date, price_hat, price_lower, price_upper)
   }, striped = TRUE, hover = TRUE, bordered = TRUE)
