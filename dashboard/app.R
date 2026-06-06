@@ -104,7 +104,7 @@ ui <- page_sidebar(
         tags$li("Displays historical prices + forecast cone")
       ),
       hr(),
-      p(strong("Data source:"), textOutput("data_source_text", inline = TRUE)),
+      p(strong("Data source:"), Sys.getenv("ENV_MODE", unset = "synthetic")),
       p(strong("Author:"), "Kingsley Akenu (@Kayterthesly / KAIZEN 改善)"),
       p(strong("Pipeline commit:"), "See model metadata tab after running forecast")
     )
@@ -129,9 +129,7 @@ server <- function(input, output, session) {
     )
   })
   
-  output$data_source_text <- renderText({
-    Sys.getenv("ENV_MODE", "synthetic")
-  })
+  
   
   # ── Run forecast on button click ────────────────────────────────────────────
   observeEvent(input$run, {
@@ -242,11 +240,17 @@ server <- function(input, output, session) {
       paste(sym, "— Historical +", input$horizon, "Day Forecast")
     }
     
+    # Cap y-axis at 1.5x historical max so CI explosion doesn't distort scale
+    y_max <- if (!is.null(historical) && nrow(historical) > 0) {
+      max(historical$adjusted, na.rm = TRUE) * 1.5
+    } else NULL
+    
     fig |> layout(
       title      = list(text = title_text, font = list(size = 14)),
       xaxis      = list(title = "Date", showgrid = FALSE),
       yaxis      = list(title = "Price (USD)", showgrid = TRUE,
-                        gridcolor = "#f0f0f0"),
+                        gridcolor = "#f0f0f0",
+                        range = if (!is.null(y_max)) list(0, y_max) else NULL),
       hovermode  = "x unified",
       legend     = list(orientation = "h", y = -0.15),
       plot_bgcolor  = "#ffffff",
