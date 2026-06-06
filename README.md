@@ -45,3 +45,12 @@ Stock & Crypto Price Analysis and Prediction Pipeline
 - `POST /predict/price` — full ARIMA forecast pipeline over HTTP
 - trace_id propagation verified end-to-end (httr ↔ background job logs)
 - Input validation + tryCatch error handling on all endpoints
+
+### Stage 5 — Dashboard
+**Date:** 2026-06-06 | **Commit:** cbe237c | **Status:** ✅ Complete
+
+- Shiny + Plotly interactive dashboard
+- Tab 1: historical price + forecast line + 95% CI cone
+- Tab 2: model metadata + forecast table
+- Tab 3: about/pipeline info
+- Full pipeline runs on button click — no API dependency
