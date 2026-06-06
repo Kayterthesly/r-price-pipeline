@@ -1,0 +1,103 @@
+# =============================================================================
+# .github/workflows/ci.yml
+# Pipeline: r-price-pipeline
+# Stage: 6 — CI/CD: lint → test → validate data → build Docker
+# Triggers: every push and pull request to master
+# =============================================================================
+
+name: r-price-pipeline CI
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+    branches: [master, main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up R
+        uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: '4.5.0'
+          use-public-rspm: true
+
+      - name: Set up renv cache
+        uses: actions/cache@v3
+        with:
+          path: ~/.local/share/renv
+          key: ${{ runner.os }}-renv-${{ hashFiles('renv.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-renv-
+
+      - name: Install renv and restore packages
+        run: |
+          R -e "install.packages('renv')"
+          R -e "renv::restore(prompt = FALSE)"
+
+      - name: Lint R scripts
+        run: |
+          R -e "lintr::lint_dir('r_scripts', linters = lintr::linters_with_defaults(
+            line_length_linter = lintr::line_length_linter(120)
+          ))"
+        continue-on-error: true
+
+      - name: Set up synthetic DuckDB for testing
+        run: |
+          Rscript -e "
+            source('r_scripts/00_utils.R')
+            source('r_scripts/01_ingestion.R')
+            source('r_scripts/02_features.R')
+            fetch_and_store_history('BTC-USD', years_back = 3)
+            fetch_and_store_history('TEST-UNIT', years_back = 2)
+            generate_pipeline_features('BTC-USD')
+            generate_pipeline_features('TEST-UNIT')
+          "
+        env:
+          ENV_MODE: synthetic
+          DB_PATH: data/pipeline_store.duckdb
+          LOG_LEVEL: WARN
+
+      - name: Run data tests
+        run: Rscript tests/data_tests.R
+        env:
+          ENV_MODE: synthetic
+          DB_PATH: data/pipeline_store.duckdb
+          LOG_LEVEL: WARN
+
+      - name: Run unit tests
+        run: |
+          R -e "
+            library(testthat)
+            library(here)
+            results <- testthat::test_dir('tests/unit', reporter = 'summary')
+            if (any(as.data.frame(results)[['failed']] > 0)) quit(status = 1)
+          "
+        env:
+          ENV_MODE: synthetic
+          DB_PATH: data/pipeline_store.duckdb
+          LOG_LEVEL: WARN
+
+  docker:
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.ref == 'refs/heads/master'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build -f infra/Dockerfile -t r-price-pipeline:latest .
+
+      - name: Verify API health in container
+        run: |
+          docker run -d -p 8000:8000 --name pipeline-test r-price-pipeline:latest
+          sleep 90
+          curl -f http://localhost:8000/health && echo "Health check passed"
+          docker stop pipeline-test

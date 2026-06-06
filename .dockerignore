@@ -1,0 +1,12 @@
+.Renviron
+data/
+models/
+notes/
+dashboard/
+tests/
+renv/library/
+renv/staging/
+.git/
+.Rhistory
+.RData
+*.duckdb
