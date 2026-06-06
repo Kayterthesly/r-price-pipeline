@@ -54,3 +54,11 @@ Stock & Crypto Price Analysis and Prediction Pipeline
 - Tab 2: model metadata + forecast table
 - Tab 3: about/pipeline info
 - Full pipeline runs on button click — no API dependency
+
+### Stage 5 — Dashboard
+**Date:** 2026-06-06 | **Commits:** cbe237c, e81f13b, 9e7a519 | **Status:** ✅ Complete
+- Shiny + Plotly interactive dashboard, flatly theme, Inter font
+- Tab 1: historical price (blue) + forecast cone (orange CI) + forecast line (dashed)
+- Tab 2: full model metadata + formatted forecast table
+- Tab 3: pipeline description + data source + author
+- Fixes: y-axis scale cap, date formatting, About tab data source
