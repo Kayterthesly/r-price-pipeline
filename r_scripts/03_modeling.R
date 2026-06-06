@@ -169,10 +169,14 @@ compute_asset_forecasts <- function(target_symbol,
   log_info("Forecasts converted to prices | last_price={round(last_price, 2)}")
   
   # ── STEP 8: Save model artifact and metadata ──────────────────────────────────
+  # UUID suffix: collision-proof even when tests call this function
+  # multiple times per second. uuid package already installed (Stage 4).
   model_version <- paste0(
     tolower(model_type), "_",
     gsub("[^a-zA-Z0-9]", "", target_symbol), "_",
-    format(Sys.time(), "%Y%m%d%H%M%S")
+    format(Sys.time(), "%Y%m%d"),
+    "_",
+    substr(uuid::UUIDgenerate(), 1, 8)
   )
   
   # Save model RDS
