@@ -85,11 +85,16 @@ run_test("No negative prices in raw_prices", {
   n == 0
 })
 
-run_test("feature_prices row count matches raw_prices", {
-  n_raw  <- DBI::dbGetQuery(con,
-                            "SELECT COUNT(*) AS n FROM raw_prices WHERE symbol = 'BTC-USD'")$n
-  n_feat <- DBI::dbGetQuery(con,
-                            "SELECT COUNT(*) AS n FROM feature_prices WHERE symbol = 'BTC-USD'")$n
+run_test("feature_prices row count matches raw_prices for same symbol", {
+  # Dynamically pick a symbol present in feature_prices — not hardcoded
+  sym <- DBI::dbGetQuery(con,
+                         "SELECT DISTINCT symbol FROM feature_prices LIMIT 1")$symbol
+  if (length(sym) == 0 || is.na(sym)) return(FALSE)
+  
+  n_raw  <- DBI::dbGetQuery(con, sprintf(
+    "SELECT COUNT(*) AS n FROM raw_prices WHERE symbol = '%s'", sym))$n
+  n_feat <- DBI::dbGetQuery(con, sprintf(
+    "SELECT COUNT(*) AS n FROM feature_prices WHERE symbol = '%s'", sym))$n
   n_raw == n_feat
 })
 

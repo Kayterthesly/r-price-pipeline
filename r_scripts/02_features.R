@@ -91,8 +91,21 @@ generate_pipeline_features <- function(target_symbol) {
   log_info("Features computed | symbol={target_symbol} | columns={ncol(df_features)}")
   
   # ── STEP 5: Write feature table to DuckDB ────────────────────────────────────
-  DBI::dbWriteTable(con, "feature_prices", df_features, overwrite = TRUE)
-  log_info("feature_prices table written | rows={nrow(df_features)}")
+  # Symbol-aware write: preserve other symbols, replace only target_symbol
+  # This mirrors the raw_prices upsert pattern — multi-symbol, persistent
+  if (!DBI::dbExistsTable(con, "feature_prices")) {
+    # First run ever: create table from data frame schema
+    DBI::dbWriteTable(con, "feature_prices", df_features, overwrite = FALSE)
+    log_info("feature_prices table created | rows={nrow(df_features)}")
+  } else {
+    # Subsequent runs: delete this symbol's rows, append fresh ones
+    deleted <- DBI::dbExecute(con,
+                              "DELETE FROM feature_prices WHERE symbol = ?",
+                              params = list(target_symbol))
+    log_info("Deleted {deleted} existing rows for {target_symbol}")
+    DBI::dbWriteTable(con, "feature_prices", df_features, append = TRUE)
+    log_info("feature_prices rows appended | rows={nrow(df_features)}")
+  }
   
   log_info("Feature engineering complete | symbol={target_symbol}")
   invisible(df_features)
